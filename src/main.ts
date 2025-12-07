@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import Preloader from './scenes/Preloader';
 import GameScene from './scenes/GameScene';
+import { AdminManager } from './admin/AdminManager';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -22,4 +23,14 @@ const config: Phaser.Types.Core.GameConfig = {
     scene: [Preloader, GameScene]
 };
 
-export default new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+const adminManager = new AdminManager();
+adminManager.setOnLevelDataChange((data) => {
+    const gameScene = game.scene.getScene('game') as GameScene;
+    if (gameScene) {
+        gameScene.updateLevelData(data);
+    }
+});
+
+export default game;
