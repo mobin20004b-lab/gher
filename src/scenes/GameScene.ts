@@ -14,7 +14,7 @@ export default class GameScene extends Phaser.Scene {
     private qandonCount: number = 0;
 
     // Mock data for a level
-    private levelData = {
+    private levelData: { letters: string[], words: string[], extras: string[] } = {
         letters: ['س', 'ل', 'ا', 'م'], // Salaam
         words: ['سلام'], // Target words
         extras: ['لمس', 'سام'] // Valid extra words for Qandon
@@ -22,6 +22,12 @@ export default class GameScene extends Phaser.Scene {
 
     constructor() {
         super('game');
+    }
+
+    public updateLevelData(data: { letters: string[], words: string[], extras: string[] }) {
+        this.levelData = data;
+        // Restart the scene to apply changes
+        this.scene.restart();
     }
 
     create() {
