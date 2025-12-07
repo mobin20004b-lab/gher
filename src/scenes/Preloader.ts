@@ -13,19 +13,34 @@ export default class Preloader extends Phaser.Scene {
         graphics.clear();
         const bgColors = [0x5d4037, 0x4e342e, 0x3e2723]; // Dark wood/brown theme
         graphics.fillGradientStyle(0x5d4037, 0x5d4037, 0x3e2723, 0x3e2723, 1);
-        graphics.fillRect(0, 0, 360, 640);
+
+        // Make the generated background texture larger to support desktop resolutions
+        const bgWidth = 1920;
+        const bgHeight = 1080;
+
+        graphics.fillRect(0, 0, bgWidth, bgHeight);
 
         // Add some pattern (faint diamonds)
         graphics.lineStyle(1, 0xffffff, 0.05);
-        for(let i=0; i<640; i+=40) {
+        // Draw diagonal lines from left side
+        for(let i=0; i<bgHeight; i+=40) {
             graphics.moveTo(0, i);
-            graphics.lineTo(360, i+360);
+            graphics.lineTo(bgWidth, i+bgWidth);
             graphics.moveTo(0, i);
-            graphics.lineTo(360, i-360);
+            graphics.lineTo(bgWidth, i-bgWidth);
+        }
+        // Draw diagonal lines from top and bottom to cover the rest of the width
+        for(let x=0; x<bgWidth; x+=40) {
+            // Downward diagonals starting from top edge
+            graphics.moveTo(x, 0);
+            graphics.lineTo(x + bgHeight, bgHeight);
+            // Upward diagonals starting from bottom edge
+            graphics.moveTo(x, bgHeight);
+            graphics.lineTo(x + bgHeight, 0);
         }
         graphics.strokePath();
 
-        graphics.generateTexture('background', 360, 640);
+        graphics.generateTexture('background', bgWidth, bgHeight);
 
         // --- Saucer (Tray) ---
         graphics.clear();
