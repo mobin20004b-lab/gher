@@ -2,16 +2,25 @@ import Phaser from 'phaser';
 
 export default class GameScene extends Phaser.Scene {
     private saucer!: Phaser.GameObjects.Image;
+    private shuffleBtn!: Phaser.GameObjects.Image;
     private letters: Phaser.GameObjects.Container[] = [];
     private currentWord: string = '';
     private currentWordSlots: Phaser.GameObjects.Container[] = [];
     private scoreText!: Phaser.GameObjects.Text;
+    private scoreBg!: Phaser.GameObjects.Image;
+    private scoreLabel!: Phaser.GameObjects.Text;
     private score: number = 0;
 
     // Qandon related
     private qandon!: Phaser.GameObjects.Image;
     private qandonCountText!: Phaser.GameObjects.Text;
     private qandonCount: number = 0;
+
+    // Character
+    private character!: Phaser.GameObjects.Image;
+
+    // Background
+    private bg!: Phaser.GameObjects.TileSprite;
 
     // Interaction
     private isDragging: boolean = false;
@@ -37,67 +46,154 @@ export default class GameScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
-        const centerX = width / 2;
 
         // --- Background ---
-        this.add.tileSprite(0, 0, width, height, 'background').setOrigin(0, 0);
+        this.bg = this.add.tileSprite(0, 0, width, height, 'background').setOrigin(0, 0);
 
         // --- HUD ---
-        // Score
-        this.add.image(70, 40, 'panel_hud');
-        this.scoreText = this.add.text(70, 40, '0', {
+        this.scoreBg = this.add.image(0, 0, 'panel_hud');
+        this.scoreText = this.add.text(0, 0, '0', {
             fontFamily: 'Arial', fontSize: '24px', color: '#ffd700', rtl: true
         }).setOrigin(0.5);
-        this.add.text(70, 15, 'سکه', { fontFamily: 'Arial', fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
+        this.scoreLabel = this.add.text(0, 0, 'سکه', { fontFamily: 'Arial', fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
 
         // Qandon (Sugar bowl)
-        this.qandon = this.add.image(width - 50, 40, 'qandon').setScale(0.8);
-        this.qandonCountText = this.add.text(width - 50, 45, '0', {
+        this.qandon = this.add.image(0, 0, 'qandon').setScale(0.8);
+        this.qandonCountText = this.add.text(0, 0, '0', {
             fontFamily: 'Arial', fontSize: '16px', color: '#000000'
         }).setOrigin(0.5);
 
         // --- Character ---
-        const char = this.add.image(centerX, 120, 'character');
-
-        // --- Target Slots ---
-        this.createTargetSlots(this.levelData.words[0].length);
+        this.character = this.add.image(0, 0, 'character');
 
         // --- Saucer & Letters Area ---
-        const saucerY = height - 150;
-        this.saucer = this.add.image(centerX, saucerY, 'saucer');
+        this.saucer = this.add.image(0, 0, 'saucer');
 
         // Shuffle Button (Center of saucer)
-        const shuffleBtn = this.add.image(centerX, saucerY, 'btn_shuffle').setInteractive();
-        shuffleBtn.on('pointerdown', () => this.shuffleLetters());
+        this.shuffleBtn = this.add.image(0, 0, 'btn_shuffle').setInteractive();
+        this.shuffleBtn.on('pointerdown', () => this.shuffleLetters());
 
         // Line Graphics
         this.lineGraphics = this.add.graphics();
 
         // Word Preview (floating above saucer)
-        this.wordPreviewText = this.add.text(centerX, saucerY - 140, '', {
+        this.wordPreviewText = this.add.text(0, 0, '', {
             fontFamily: 'Arial', fontSize: '32px', color: '#ffffff',
             backgroundColor: '#00000088', padding: { x: 10, y: 5 }
         }).setOrigin(0.5).setVisible(false);
 
         // --- Letters ---
-        this.createLetters(centerX, saucerY);
+        // Letters are created in updateLayout because they need position
+
+        // --- Target Slots ---
+        // Target Slots are created in updateLayout
 
         // --- Global Input Handling ---
         this.input.on('pointerup', this.handlePointerUp, this);
         this.input.on('pointermove', this.handlePointerMove, this);
+
+        // --- Layout ---
+        this.updateLayout();
+
+        // Listen for resize
+        this.scale.on('resize', this.resize, this);
     }
 
-    private createTargetSlots(length: number) {
+    private resize(gameSize: Phaser.Structs.Size) {
+        const width = gameSize.width;
+        const height = gameSize.height;
+
+        this.cameras.main.setViewport(0, 0, width, height);
+        this.bg.setSize(width, height);
+
+        this.updateLayout();
+    }
+
+    private updateLayout() {
         const { width, height } = this.scale;
-        const startX = width / 2 - ((length - 1) * 28); // tighter spacing
-        const y = height / 2 - 20;
+        const isLandscape = width > height;
+
+        // Position HUD
+        if (isLandscape) {
+            // HUD Top Left/Right
+            this.scoreBg.setPosition(80, 40);
+            this.scoreText.setPosition(80, 40);
+            this.scoreLabel.setPosition(80, 15);
+
+            this.qandon.setPosition(width - 60, 50);
+            this.qandonCountText.setPosition(width - 60, 55);
+        } else {
+            // HUD Top Left/Right
+            this.scoreBg.setPosition(70, 40);
+            this.scoreText.setPosition(70, 40);
+            this.scoreLabel.setPosition(70, 15);
+
+            this.qandon.setPosition(width - 50, 40);
+            this.qandonCountText.setPosition(width - 50, 45);
+        }
+
+        if (isLandscape) {
+            // Landscape Layout: Saucer on Right, Slots/Character on Left
+
+            // Saucer Position (Bottom Rightish)
+            const saucerX = width * 0.75;
+            const saucerY = height * 0.6;
+            this.saucer.setPosition(saucerX, saucerY);
+            this.shuffleBtn.setPosition(saucerX, saucerY);
+            this.wordPreviewText.setPosition(saucerX, saucerY - 140);
+
+            // Character Position (Top Leftish)
+            this.character.setPosition(width * 0.25, height * 0.3);
+
+            // Target Slots Position (Below Character)
+            this.positionTargetSlots(width * 0.25, height * 0.6);
+
+            // Re-create letters at new position
+            this.repositionLetters(saucerX, saucerY);
+
+        } else {
+            // Portrait Layout (Original)
+            const centerX = width / 2;
+            const saucerY = height - 150;
+
+            // Character
+            this.character.setPosition(centerX, 120);
+
+            // Saucer
+            this.saucer.setPosition(centerX, saucerY);
+            this.shuffleBtn.setPosition(centerX, saucerY);
+            this.wordPreviewText.setPosition(centerX, saucerY - 140);
+
+            // Target Slots
+            this.positionTargetSlots(centerX, height / 2 - 20);
+
+            // Re-create letters
+            this.repositionLetters(centerX, saucerY);
+        }
+    }
+
+    private positionTargetSlots(centerX: number, centerY: number) {
+        const length = this.levelData.words[0].length;
+        // Check if slots already exist
+        if (this.currentWordSlots.length === 0) {
+            this.createTargetSlots(length, centerX, centerY);
+        } else {
+             const startX = centerX - ((length - 1) * 28);
+             this.currentWordSlots.forEach((container, i) => {
+                 container.setPosition(startX + i * 60, centerY);
+             });
+        }
+    }
+
+    private createTargetSlots(length: number, centerX: number, centerY: number) {
+        const startX = centerX - ((length - 1) * 28);
 
         // Clear existing
         this.currentWordSlots.forEach(s => s.destroy());
         this.currentWordSlots = [];
 
         for(let i = 0; i < length; i++) {
-            const container = this.add.container(startX + i * 60, y);
+            const container = this.add.container(startX + i * 60, centerY);
 
             // Background
             const bg = this.add.image(0, 0, 'slot_bg'); // Empty slot
@@ -109,6 +205,21 @@ export default class GameScene extends Phaser.Scene {
 
             container.add([bg, text]);
             this.currentWordSlots.push(container);
+        }
+    }
+
+    private repositionLetters(centerX: number, centerY: number) {
+        if (this.letters.length === 0) {
+            this.createLetters(centerX, centerY);
+        } else {
+             // Just reshuffle/reposition them around new center
+             const radius = 80;
+             this.letters.forEach((letter, index) => {
+                 const angle = (index / this.letters.length) * Math.PI * 2 - (Math.PI / 2);
+                 const x = centerX + Math.cos(angle) * radius;
+                 const y = centerY + Math.sin(angle) * radius;
+                 letter.setPosition(x, y);
+             });
         }
     }
 
@@ -148,9 +259,19 @@ export default class GameScene extends Phaser.Scene {
     }
 
     private shuffleLetters() {
+        // Need current center
         const { width, height } = this.scale;
-        const centerX = width / 2;
-        const centerY = height - 150;
+        const isLandscape = width > height;
+
+        let centerX, centerY;
+        if (isLandscape) {
+             centerX = width * 0.75;
+             centerY = height * 0.6;
+        } else {
+             centerX = width / 2;
+             centerY = height - 150;
+        }
+
         const radius = 80;
 
         const shuffled = Phaser.Utils.Array.Shuffle([...this.letters]);
@@ -333,7 +454,7 @@ export default class GameScene extends Phaser.Scene {
             this.qandonCountText.setText(this.qandonCount.toString());
 
             // Fly animation
-            const flyText = this.add.text(this.scale.width/2, this.scale.height - 150, this.currentWord, {
+            const flyText = this.add.text(this.saucer.x, this.saucer.y, this.currentWord, {
                  fontFamily: 'Arial', fontSize: '24px', color: '#ffeb3b', rtl: true
             }).setOrigin(0.5);
 

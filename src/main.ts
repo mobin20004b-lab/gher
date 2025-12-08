@@ -5,12 +5,12 @@ import { AdminManager } from './admin/AdminManager';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: 360, // Mobile portrait width
-    height: 640,
+    width: window.innerWidth,
+    height: window.innerHeight,
     parent: 'app',
-    backgroundColor: '#3b3b3b', // Fallback color
+    backgroundColor: '#3b3b3b',
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
     physics: {
