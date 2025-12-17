@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { LevelManager, WordCheckResult, LevelData } from '../logic/LevelManager';
 
 export default class GameScene extends Phaser.Scene {
     private saucer!: Phaser.GameObjects.Image;
@@ -9,12 +10,10 @@ export default class GameScene extends Phaser.Scene {
     private scoreText!: Phaser.GameObjects.Text;
     private scoreBg!: Phaser.GameObjects.Image;
     private scoreLabel!: Phaser.GameObjects.Text;
-    private score: number = 0;
 
     // Qandon related
     private qandon!: Phaser.GameObjects.Image;
     private qandonCountText!: Phaser.GameObjects.Text;
-    private qandonCount: number = 0;
 
     // Character
     private character!: Phaser.GameObjects.Image;
@@ -29,27 +28,45 @@ export default class GameScene extends Phaser.Scene {
     private lineGraphics!: Phaser.GameObjects.Graphics;
     private wordPreviewText!: Phaser.GameObjects.Text;
 
-    // Mock data for a level
-    private levelData: { letters: string[], words: string[], extras: string[] } = {
-        letters: ['س', 'ل', 'ا', 'م'], // Salaam
-        words: ['سلام'], // Target words
-        extras: ['لمس', 'سام'] // Valid extra words for Qandon
-    };
+    // Logic
+    private levelManager!: LevelManager;
 
     constructor() {
         super('game');
     }
 
+    init(data: any) {
+        // If we have existing level data passed (e.g. from Admin update), use it.
+        // Otherwise, initialize new LevelManager if it doesn't exist.
+
+        if (!this.levelManager) {
+            this.levelManager = new LevelManager();
+        }
+
+        // If data is passed in restart/start, use it to set level
+        if (data && data.levelData) {
+            this.levelManager.setLevelData(data.levelData);
+        } else if (data && data.reset) {
+            // Just reloading current level
+            this.levelManager.loadLevel(this.levelManager.getCurrentLevelIndex());
+        }
+    }
+
     public updateLevelData(data: { letters: string[], words: string[], extras: string[] }) {
-        this.levelData = data;
-        this.scene.restart();
+        const levelData: LevelData = {
+            id: 999, // Custom ID for admin/dynamic levels
+            letters: data.letters,
+            words: data.words,
+            extras: data.extras
+        };
+        // Restart scene with new data
+        this.scene.restart({ levelData: levelData });
     }
 
     create() {
         const { width, height } = this.scale;
 
         // --- Background ---
-        // Optimization: Split background into gradient and repeating pattern
         this.bgGradient = this.add.image(0, 0, 'bg_gradient').setOrigin(0, 0);
         this.bgGradient.setDisplaySize(width, height);
 
@@ -57,14 +74,14 @@ export default class GameScene extends Phaser.Scene {
 
         // --- HUD ---
         this.scoreBg = this.add.image(0, 0, 'panel_hud');
-        this.scoreText = this.add.text(0, 0, '0', {
+        this.scoreText = this.add.text(0, 0, this.levelManager.getScore().toString(), {
             fontFamily: 'Arial', fontSize: '24px', color: '#ffd700', rtl: true
         }).setOrigin(0.5);
         this.scoreLabel = this.add.text(0, 0, 'سکه', { fontFamily: 'Arial', fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
 
         // Qandon (Sugar bowl)
         this.qandon = this.add.image(0, 0, 'qandon').setScale(0.8);
-        this.qandonCountText = this.add.text(0, 0, '0', {
+        this.qandonCountText = this.add.text(0, 0, this.levelManager.getQandonCount().toString(), {
             fontFamily: 'Arial', fontSize: '16px', color: '#000000'
         }).setOrigin(0.5);
 
@@ -86,12 +103,6 @@ export default class GameScene extends Phaser.Scene {
             fontFamily: 'Arial', fontSize: '32px', color: '#ffffff',
             backgroundColor: '#00000088', padding: { x: 10, y: 5 }
         }).setOrigin(0.5).setVisible(false);
-
-        // --- Letters ---
-        // Letters are created in updateLayout because they need position
-
-        // --- Target Slots ---
-        // Target Slots are created in updateLayout
 
         // --- Global Input Handling ---
         this.input.on('pointerup', this.handlePointerUp, this);
@@ -123,7 +134,6 @@ export default class GameScene extends Phaser.Scene {
 
         // Position HUD
         if (isLandscape) {
-            // HUD Top Left/Right
             this.scoreBg.setPosition(80, 40);
             this.scoreText.setPosition(80, 40);
             this.scoreLabel.setPosition(80, 15);
@@ -131,7 +141,6 @@ export default class GameScene extends Phaser.Scene {
             this.qandon.setPosition(width - 60, 50);
             this.qandonCountText.setPosition(width - 60, 55);
         } else {
-            // HUD Top Left/Right
             this.scoreBg.setPosition(70, 40);
             this.scoreText.setPosition(70, 40);
             this.scoreLabel.setPosition(70, 15);
@@ -141,48 +150,38 @@ export default class GameScene extends Phaser.Scene {
         }
 
         if (isLandscape) {
-            // Landscape Layout: Saucer on Right, Slots/Character on Left
-
-            // Saucer Position (Bottom Rightish)
             const saucerX = width * 0.75;
             const saucerY = height * 0.6;
             this.saucer.setPosition(saucerX, saucerY);
             this.shuffleBtn.setPosition(saucerX, saucerY);
             this.wordPreviewText.setPosition(saucerX, saucerY - 140);
 
-            // Character Position (Top Leftish)
             this.character.setPosition(width * 0.25, height * 0.3);
 
-            // Target Slots Position (Below Character)
             this.positionTargetSlots(width * 0.25, height * 0.6);
-
-            // Re-create letters at new position
             this.repositionLetters(saucerX, saucerY);
 
         } else {
-            // Portrait Layout (Original)
             const centerX = width / 2;
             const saucerY = height - 150;
 
-            // Character
             this.character.setPosition(centerX, 120);
 
-            // Saucer
             this.saucer.setPosition(centerX, saucerY);
             this.shuffleBtn.setPosition(centerX, saucerY);
             this.wordPreviewText.setPosition(centerX, saucerY - 140);
 
-            // Target Slots
             this.positionTargetSlots(centerX, height / 2 - 20);
-
-            // Re-create letters
             this.repositionLetters(centerX, saucerY);
         }
     }
 
     private positionTargetSlots(centerX: number, centerY: number) {
-        const length = this.levelData.words[0].length;
-        // Check if slots already exist
+        const levelData = this.levelManager.getCurrentLevelData();
+        if (!levelData) return;
+
+        const length = levelData.words[0].length;
+
         if (this.currentWordSlots.length === 0) {
             this.createTargetSlots(length, centerX, centerY);
         } else {
@@ -196,17 +195,13 @@ export default class GameScene extends Phaser.Scene {
     private createTargetSlots(length: number, centerX: number, centerY: number) {
         const startX = centerX - ((length - 1) * 28);
 
-        // Clear existing
         this.currentWordSlots.forEach(s => s.destroy());
         this.currentWordSlots = [];
 
         for(let i = 0; i < length; i++) {
             const container = this.add.container(startX + i * 60, centerY);
 
-            // Background
-            const bg = this.add.image(0, 0, 'slot_bg'); // Empty slot
-
-            // Text
+            const bg = this.add.image(0, 0, 'slot_bg');
             const text = this.add.text(0, 0, '', {
                 fontFamily: 'Arial', fontSize: '30px', color: '#5d4037', fontStyle: 'bold'
             }).setOrigin(0.5);
@@ -220,7 +215,6 @@ export default class GameScene extends Phaser.Scene {
         if (this.letters.length === 0) {
             this.createLetters(centerX, centerY);
         } else {
-             // Just reshuffle/reposition them around new center
              const radius = 80;
              this.letters.forEach((letter, index) => {
                  const angle = (index / this.letters.length) * Math.PI * 2 - (Math.PI / 2);
@@ -232,33 +226,27 @@ export default class GameScene extends Phaser.Scene {
     }
 
     private createLetters(centerX: number, centerY: number) {
-        // Clear if existing
         this.letters.forEach(l => l.destroy());
         this.letters = [];
 
-        this.levelData.letters.forEach((char, index) => {
+        const levelData = this.levelManager.getCurrentLevelData();
+        if (!levelData) return;
+
+        levelData.letters.forEach((char, index) => {
             const container = this.add.container(0, 0);
 
-            // Background
             const bg = this.add.image(0, 0, 'letter_bg');
 
-            // Text
             const text = this.add.text(0, 0, char, {
                 fontFamily: 'Arial', fontSize: '32px', color: '#5d4037', fontStyle: 'bold'
             }).setOrigin(0.5);
 
             container.add([bg, text]);
             container.setSize(60, 60);
-
-            // Store original texture key for restoration
             container.setData('defaultTexture', 'letter_bg');
 
-            // Interaction for starting drag
             container.setInteractive(new Phaser.Geom.Circle(0, 0, 30), Phaser.Geom.Circle.Contains);
             container.on('pointerdown', () => this.handleLetterDown(container, char));
-
-            // Enable input for hit testing during drag
-            this.input.enableDebug(container); // optional
 
             this.letters.push(container);
         });
@@ -267,7 +255,6 @@ export default class GameScene extends Phaser.Scene {
     }
 
     private shuffleLetters() {
-        // Need current center
         const { width, height } = this.scale;
         const isLandscape = width > height;
 
@@ -285,7 +272,7 @@ export default class GameScene extends Phaser.Scene {
         const shuffled = Phaser.Utils.Array.Shuffle([...this.letters]);
 
         shuffled.forEach((letter, index) => {
-             const angle = (index / shuffled.length) * Math.PI * 2 - (Math.PI / 2); // Start top
+             const angle = (index / shuffled.length) * Math.PI * 2 - (Math.PI / 2);
              const x = centerX + Math.cos(angle) * radius;
              const y = centerY + Math.sin(angle) * radius;
 
@@ -297,7 +284,6 @@ export default class GameScene extends Phaser.Scene {
                  ease: 'Back.out'
              });
 
-             // Reset state
              const bg = letter.first as Phaser.GameObjects.Image;
              bg.setTexture('letter_bg');
              letter.setScale(1);
@@ -316,19 +302,14 @@ export default class GameScene extends Phaser.Scene {
     private handlePointerMove(pointer: Phaser.Input.Pointer) {
         if (!this.isDragging) return;
 
-        // Draw line
         this.updateLine(pointer);
 
-        // Check collision with other letters
-        // We do a manual distance check or physics overlap. Simple distance check is fine.
         this.letters.forEach(letter => {
             if (this.selectedLetters.includes(letter)) return;
 
-            // Simple circular hit test
             const dx = pointer.x - letter.x;
             const dy = pointer.y - letter.y;
-            if (dx*dx + dy*dy < 30*30) { // Radius 30
-                // Add to selection
+            if (dx*dx + dy*dy < 30*30) {
                 const textObj = letter.list[1] as Phaser.GameObjects.Text;
                 this.selectLetter(letter, textObj.text);
             }
@@ -342,10 +323,8 @@ export default class GameScene extends Phaser.Scene {
         this.lineGraphics.clear();
         this.wordPreviewText.setVisible(false);
 
-        // Check Word
         this.checkWord();
 
-        // Reset Selection Visuals
         this.selectedLetters.forEach(letter => {
             const bg = letter.first as Phaser.GameObjects.Image;
             bg.setTexture('letter_bg');
@@ -363,7 +342,6 @@ export default class GameScene extends Phaser.Scene {
         this.selectedLetters.push(container);
         this.currentWord += char;
 
-        // Visual feedback
         const bg = container.first as Phaser.GameObjects.Image;
         bg.setTexture('letter_bg_active');
 
@@ -375,7 +353,6 @@ export default class GameScene extends Phaser.Scene {
             repeat: 0
         });
 
-        // Update Preview
         this.wordPreviewText.setText(this.currentWord);
         this.wordPreviewText.setVisible(true);
     }
@@ -395,73 +372,74 @@ export default class GameScene extends Phaser.Scene {
             this.lineGraphics.lineTo(letter.x, letter.y);
         }
 
-        // Line to pointer
         this.lineGraphics.lineTo(pointer.x, pointer.y);
         this.lineGraphics.strokePath();
     }
 
     private checkWord() {
          const word = this.currentWord;
+         const result = this.levelManager.checkWord(word);
 
-         if (this.levelData.words.includes(word)) {
-             // Target Word Found
-             this.handleSuccess(true);
-         } else if (this.levelData.extras.includes(word)) {
-             // Extra Word Found
-             this.handleSuccess(false);
-         } else {
-             // Invalid
-             if (word.length > 0) {
-                // Shake effect on the preview or letters?
-                // Just shake camera slightly
+         switch (result) {
+            case WordCheckResult.TARGET:
+                this.handleSuccess(true);
+                break;
+            case WordCheckResult.EXTRA:
+                this.handleSuccess(false);
+                break;
+            case WordCheckResult.ALREADY_FOUND:
                 this.cameras.main.shake(100, 0.005);
-             }
+                this.createFloatingText(this.saucer.x, this.saucer.y, 'قبلا پیدا شده', 0xffffff);
+                break;
+            case WordCheckResult.INVALID:
+            default:
+                if (word.length > 0) {
+                    this.cameras.main.shake(100, 0.005);
+                }
+                break;
          }
     }
 
     private handleSuccess(isTarget: boolean) {
         if (isTarget) {
-            this.score += 10;
-            this.scoreText.setText(`${this.score}`);
+            this.scoreText.setText(`${this.levelManager.getScore()}`);
 
-            // Update Slots
-            // Assuming the word matches the first slot for this simplified demo
-            // In a real game we find *which* word it is.
-            if (this.currentWord === this.levelData.words[0]) {
+            const words = this.levelManager.getCurrentLevelData()?.words || [];
+            if (words[0] === this.currentWord) {
                 for(let i = 0; i < this.currentWord.length; i++) {
-                    const slot = this.currentWordSlots[i];
-                    const bg = slot.list[0] as Phaser.GameObjects.Image;
-                    const text = slot.list[1] as Phaser.GameObjects.Text;
+                    if (i < this.currentWordSlots.length) {
+                        const slot = this.currentWordSlots[i];
+                        const bg = slot.list[0] as Phaser.GameObjects.Image;
+                        const text = slot.list[1] as Phaser.GameObjects.Text;
 
-                    bg.setTexture('slot_filled');
-                    text.setText(this.currentWord[i]);
+                        bg.setTexture('slot_filled');
+                        text.setText(this.currentWord[i]);
 
-                    // Pop animation
-                    slot.setScale(0);
-                    this.tweens.add({
-                        targets: slot,
-                        scale: 1,
-                        duration: 300,
-                        delay: i * 50,
-                        ease: 'Back.out'
-                    });
+                        slot.setScale(0);
+                        this.tweens.add({
+                            targets: slot,
+                            scale: 1,
+                            duration: 300,
+                            delay: i * 50,
+                            ease: 'Back.out'
+                        });
+                    }
                 }
             }
 
-            // Celebration
             this.createFloatingText(this.scale.width/2, this.scale.height/2, 'عالی!', 0x00ff00);
 
-            // Next Level (Reset for demo)
-            this.time.delayedCall(2000, () => {
-                this.resetLevel();
-            });
+            if (this.levelManager.isLevelComplete()) {
+                this.time.delayedCall(2000, () => {
+                    // Force reload/reset of the level logic
+                    this.scene.restart({ reset: true });
+                });
+            }
 
         } else {
             // Qandon
-            this.qandonCount++;
-            this.qandonCountText.setText(this.qandonCount.toString());
+            this.qandonCountText.setText(this.levelManager.getQandonCount().toString());
 
-            // Fly animation
             const flyText = this.add.text(this.saucer.x, this.saucer.y, this.currentWord, {
                  fontFamily: 'Arial', fontSize: '24px', color: '#ffeb3b', rtl: true
             }).setOrigin(0.5);
@@ -492,7 +470,7 @@ export default class GameScene extends Phaser.Scene {
         });
     }
 
-    private resetLevel() {
+    private resetLevelVisuals() {
         // Clear slots
         this.currentWordSlots.forEach(slot => {
             (slot.list[0] as Phaser.GameObjects.Image).setTexture('slot_bg');

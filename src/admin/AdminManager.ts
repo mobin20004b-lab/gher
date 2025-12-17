@@ -1,11 +1,11 @@
-import { GameBuilder, LevelData } from './GameBuilder';
+import { GameBuilder, LevelDataBuilder } from './GameBuilder';
 
 export class AdminManager {
     private container: HTMLDivElement;
     private toggleBtn: HTMLButtonElement;
     private isVisible: boolean = false;
     private gameBuilder: GameBuilder;
-    private onLevelDataChange: ((data: LevelData) => void) | null = null;
+    private onLevelDataChange: ((data: LevelDataBuilder) => void) | null = null;
 
     constructor() {
         this.container = document.createElement('div');
@@ -65,7 +65,7 @@ export class AdminManager {
         });
     }
 
-    public setOnLevelDataChange(callback: (data: LevelData) => void) {
+    public setOnLevelDataChange(callback: (data: LevelDataBuilder) => void) {
         this.onLevelDataChange = callback;
     }
 
