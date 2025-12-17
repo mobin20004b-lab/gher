@@ -20,7 +20,8 @@ export default class GameScene extends Phaser.Scene {
     private character!: Phaser.GameObjects.Image;
 
     // Background
-    private bg!: Phaser.GameObjects.TileSprite;
+    private bgGradient!: Phaser.GameObjects.Image;
+    private bgPattern!: Phaser.GameObjects.TileSprite;
 
     // Interaction
     private isDragging: boolean = false;
@@ -48,7 +49,11 @@ export default class GameScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // --- Background ---
-        this.bg = this.add.tileSprite(0, 0, width, height, 'background').setOrigin(0, 0);
+        // Optimization: Split background into gradient and repeating pattern
+        this.bgGradient = this.add.image(0, 0, 'bg_gradient').setOrigin(0, 0);
+        this.bgGradient.setDisplaySize(width, height);
+
+        this.bgPattern = this.add.tileSprite(0, 0, width, height, 'bg_pattern').setOrigin(0, 0);
 
         // --- HUD ---
         this.scoreBg = this.add.image(0, 0, 'panel_hud');
@@ -104,7 +109,10 @@ export default class GameScene extends Phaser.Scene {
         const height = gameSize.height;
 
         this.cameras.main.setViewport(0, 0, width, height);
-        this.bg.setSize(width, height);
+
+        // Update background sizes
+        this.bgGradient.setDisplaySize(width, height);
+        this.bgPattern.setSize(width, height);
 
         this.updateLayout();
     }

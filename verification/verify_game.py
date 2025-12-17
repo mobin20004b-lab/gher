@@ -1,37 +1,27 @@
+from playwright.sync_api import sync_playwright
 
-import asyncio
-from playwright.async_api import async_playwright, expect
-
-async def run():
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        # Emulate a desktop viewport (Landscape)
-        context = await browser.new_context(viewport={'width': 1280, 'height': 720})
-        page = await context.new_page()
-
-        # Wait for server to start - using port 8000 based on log
+def verify_game_load():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
         try:
-            await page.goto("http://localhost:8000", timeout=10000)
-        except:
-             # retry once
-            await asyncio.sleep(2)
-            await page.goto("http://localhost:8000")
+            # Navigate to the game (Port 8000 based on logs)
+            page.goto("http://localhost:8000")
 
-        # Wait for the game canvas to appear
-        await page.wait_for_selector("canvas")
+            # Wait for canvas to be present (GameScene loaded)
+            page.wait_for_selector("canvas", timeout=10000)
 
-        # Allow some time for the game scene to render and animations to settle
-        await asyncio.sleep(2)
+            # Wait a bit for the scene to render (Phaser init)
+            page.wait_for_timeout(3000)
 
-        # Take a screenshot of the landscape view
-        await page.screenshot(path="verification/verification.png")
+            # Take screenshot
+            page.screenshot(path="verification/verification.png")
+            print("Screenshot taken.")
 
-        # Now try a portrait viewport to verify responsiveness
-        await page.set_viewport_size({"width": 360, "height": 640})
-        await asyncio.sleep(1) # Wait for resize event to handle
-        await page.screenshot(path="verification/verification_portrait.png")
-
-        await browser.close()
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            browser.close()
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    verify_game_load()
