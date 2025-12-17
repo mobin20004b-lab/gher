@@ -22,6 +22,8 @@ export class AdminManager {
         this.container.style.fontFamily = 'Arial, sans-serif';
         this.container.style.minWidth = '300px';
         this.container.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+        this.container.setAttribute('role', 'dialog');
+        this.container.setAttribute('aria-label', 'Admin Panel');
 
         document.body.appendChild(this.container);
 
@@ -39,6 +41,18 @@ export class AdminManager {
         this.toggleBtn.style.borderRadius = '5px';
         this.toggleBtn.style.cursor = 'pointer';
         this.toggleBtn.style.fontSize = '14px';
+        this.toggleBtn.setAttribute('aria-label', 'Toggle Admin Panel');
+        this.toggleBtn.setAttribute('aria-expanded', 'false');
+        this.toggleBtn.setAttribute('aria-controls', 'admin-panel');
+
+        // Add hover effect for better feedback
+        this.toggleBtn.addEventListener('mouseenter', () => {
+            this.toggleBtn.style.backgroundColor = '#45a049';
+        });
+        this.toggleBtn.addEventListener('mouseleave', () => {
+            this.toggleBtn.style.backgroundColor = '#4CAF50';
+        });
+
         this.toggleBtn.onclick = () => this.toggle();
 
         document.body.appendChild(this.toggleBtn);
@@ -58,6 +72,7 @@ export class AdminManager {
     public toggle() {
         this.isVisible = !this.isVisible;
         this.container.style.display = this.isVisible ? 'block' : 'none';
+        this.toggleBtn.setAttribute('aria-expanded', this.isVisible.toString());
     }
 
     public getContainer(): HTMLElement {

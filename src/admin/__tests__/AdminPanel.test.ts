@@ -44,4 +44,25 @@ describe('AdminManager', () => {
         btn?.click();
         expect(container?.style.display).toBe('none');
     });
+
+    it('should have correct accessibility attributes', () => {
+        const btn = document.getElementById('admin-toggle-btn');
+        const container = document.getElementById('admin-panel');
+
+        expect(btn?.getAttribute('aria-label')).toBe('Toggle Admin Panel');
+        expect(btn?.getAttribute('aria-controls')).toBe('admin-panel');
+        expect(container?.getAttribute('role')).toBe('dialog');
+        expect(container?.getAttribute('aria-label')).toBe('Admin Panel');
+    });
+
+    it('should update aria-expanded state', () => {
+        const btn = document.getElementById('admin-toggle-btn');
+        expect(btn?.getAttribute('aria-expanded')).toBe('false');
+
+        adminManager.toggle();
+        expect(btn?.getAttribute('aria-expanded')).toBe('true');
+
+        adminManager.toggle();
+        expect(btn?.getAttribute('aria-expanded')).toBe('false');
+    });
 });
