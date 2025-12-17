@@ -1,4 +1,7 @@
-export interface LevelData {
+import { LevelData as GameLevelData } from '../logic/LevelManager';
+
+// Temporary interface until we fully merge or we can use Partial<GameLevelData>
+export interface LevelDataBuilder {
     letters: string[];
     words: string[];
     extras: string[];
@@ -6,7 +9,7 @@ export interface LevelData {
 
 export class GameBuilder {
     private container: HTMLElement;
-    private applyCallback: ((data: LevelData) => void) | null = null;
+    private applyCallback: ((data: LevelDataBuilder) => void) | null = null;
 
     private lettersInput!: HTMLInputElement;
     private wordsInput!: HTMLInputElement;
@@ -67,7 +70,7 @@ export class GameBuilder {
         return this.lettersInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
     }
 
-    public onApply(callback: (data: LevelData) => void) {
+    public onApply(callback: (data: LevelDataBuilder) => void) {
         this.applyCallback = callback;
     }
 
@@ -76,7 +79,7 @@ export class GameBuilder {
         const words = this.wordsInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
         const extras = this.extrasInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
-        const data: LevelData = {
+        const data: LevelDataBuilder = {
             letters,
             words,
             extras
