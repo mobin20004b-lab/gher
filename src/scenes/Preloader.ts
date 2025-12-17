@@ -8,39 +8,29 @@ export default class Preloader extends Phaser.Scene {
     preload() {
         const graphics = this.make.graphics({ x: 0, y: 0 });
 
-        // --- Background ---
-        // Radial gradient simulation using concentric circles
+        // --- Background Gradient ---
         graphics.clear();
-        const bgColors = [0x5d4037, 0x4e342e, 0x3e2723]; // Dark wood/brown theme
         graphics.fillGradientStyle(0x5d4037, 0x5d4037, 0x3e2723, 0x3e2723, 1);
+        graphics.fillRect(0, 0, 1, 512);
+        graphics.generateTexture('bg_gradient', 1, 512);
 
-        // Make the generated background texture larger to support desktop resolutions
-        const bgWidth = 1920;
-        const bgHeight = 1080;
-
-        graphics.fillRect(0, 0, bgWidth, bgHeight);
-
-        // Add some pattern (faint diamonds)
+        // --- Background Pattern (Faint Diamonds) ---
+        // Optimization: Generate a small tileable texture instead of a full-screen one.
+        // The pattern repeats every 40px. An "X" in a 40x40 box tiles to form the diamond grid.
+        graphics.clear();
         graphics.lineStyle(1, 0xffffff, 0.05);
-        // Draw diagonal lines from left side
-        for(let i=0; i<bgHeight; i+=40) {
-            graphics.moveTo(0, i);
-            graphics.lineTo(bgWidth, i+bgWidth);
-            graphics.moveTo(0, i);
-            graphics.lineTo(bgWidth, i-bgWidth);
-        }
-        // Draw diagonal lines from top and bottom to cover the rest of the width
-        for(let x=0; x<bgWidth; x+=40) {
-            // Downward diagonals starting from top edge
-            graphics.moveTo(x, 0);
-            graphics.lineTo(x + bgHeight, bgHeight);
-            // Upward diagonals starting from bottom edge
-            graphics.moveTo(x, bgHeight);
-            graphics.lineTo(x + bgHeight, 0);
-        }
-        graphics.strokePath();
+        graphics.beginPath();
 
-        graphics.generateTexture('background', bgWidth, bgHeight);
+        // Diagonal 1: y = x (Top-Left to Bottom-Right)
+        graphics.moveTo(0, 0);
+        graphics.lineTo(40, 40);
+
+        // Diagonal 2: y = -x + 40 (Bottom-Left to Top-Right)
+        graphics.moveTo(0, 40);
+        graphics.lineTo(40, 0);
+
+        graphics.strokePath();
+        graphics.generateTexture('bg_pattern', 40, 40);
 
         // --- Saucer (Tray) ---
         graphics.clear();
