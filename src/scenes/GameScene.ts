@@ -6,7 +6,7 @@ export default class GameScene extends Phaser.Scene {
     private shuffleBtn!: Phaser.GameObjects.Image;
     private letters: Phaser.GameObjects.Container[] = [];
     private currentWord: string = '';
-    private currentWordSlots: Phaser.GameObjects.Container[] = [];
+    private currentWordSlots: Phaser.GameObjects.Container[][] = [];
     private scoreText!: Phaser.GameObjects.Text;
     private scoreBg!: Phaser.GameObjects.Image;
     private scoreLabel!: Phaser.GameObjects.Text;
@@ -180,35 +180,56 @@ export default class GameScene extends Phaser.Scene {
         const levelData = this.levelManager.getCurrentLevelData();
         if (!levelData) return;
 
-        const length = levelData.words[0].length;
-
-        if (this.currentWordSlots.length === 0) {
-            this.createTargetSlots(length, centerX, centerY);
+        if (this.currentWordSlots.length !== levelData.words.length) {
+            this.createTargetSlots(centerX, centerY);
         } else {
-             const startX = centerX - ((length - 1) * 28);
-             this.currentWordSlots.forEach((container, i) => {
-                 container.setPosition(startX + i * 60, centerY);
+             const words = levelData.words;
+             const totalHeight = words.length * 70;
+             let startY = centerY - (totalHeight / 2) + 35;
+
+             this.currentWordSlots.forEach((row, index) => {
+                 const word = words[index];
+                 const length = word.length;
+                 const startX = centerX - ((length - 1) * 30);
+
+                 row.forEach((container, i) => {
+                     container.setPosition(startX + i * 60, startY);
+                 });
+                 startY += 70;
              });
         }
     }
 
-    private createTargetSlots(length: number, centerX: number, centerY: number) {
-        const startX = centerX - ((length - 1) * 28);
+    private createTargetSlots(centerX: number, centerY: number) {
+        const levelData = this.levelManager.getCurrentLevelData();
+        if (!levelData) return;
 
-        this.currentWordSlots.forEach(s => s.destroy());
+        this.currentWordSlots.forEach(row => row.forEach(s => s.destroy()));
         this.currentWordSlots = [];
 
-        for(let i = 0; i < length; i++) {
-            const container = this.add.container(startX + i * 60, centerY);
+        const words = levelData.words;
+        const totalHeight = words.length * 70;
+        let startY = centerY - (totalHeight / 2) + 35;
 
-            const bg = this.add.image(0, 0, 'slot_bg');
-            const text = this.add.text(0, 0, '', {
-                fontFamily: 'Arial', fontSize: '30px', color: '#5d4037', fontStyle: 'bold'
-            }).setOrigin(0.5);
+        words.forEach(word => {
+            const row: Phaser.GameObjects.Container[] = [];
+            const length = word.length;
+            const startX = centerX - ((length - 1) * 30);
 
-            container.add([bg, text]);
-            this.currentWordSlots.push(container);
-        }
+            for(let i = 0; i < length; i++) {
+                const container = this.add.container(startX + i * 60, startY);
+
+                const bg = this.add.image(0, 0, 'slot_bg');
+                const text = this.add.text(0, 0, '', {
+                    fontFamily: 'Arial', fontSize: '30px', color: '#5d4037', fontStyle: 'bold'
+                }).setOrigin(0.5);
+
+                container.add([bg, text]);
+                row.push(container);
+            }
+            this.currentWordSlots.push(row);
+            startY += 70;
+        });
     }
 
     private repositionLetters(centerX: number, centerY: number) {
@@ -405,10 +426,14 @@ export default class GameScene extends Phaser.Scene {
             this.scoreText.setText(`${this.levelManager.getScore()}`);
 
             const words = this.levelManager.getCurrentLevelData()?.words || [];
-            if (words[0] === this.currentWord) {
+            const wordIndex = words.indexOf(this.currentWord);
+
+            if (wordIndex !== -1 && this.currentWordSlots[wordIndex]) {
+                const row = this.currentWordSlots[wordIndex];
+
                 for(let i = 0; i < this.currentWord.length; i++) {
-                    if (i < this.currentWordSlots.length) {
-                        const slot = this.currentWordSlots[i];
+                    if (i < row.length) {
+                        const slot = row[i];
                         const bg = slot.list[0] as Phaser.GameObjects.Image;
                         const text = slot.list[1] as Phaser.GameObjects.Text;
 
@@ -472,9 +497,11 @@ export default class GameScene extends Phaser.Scene {
 
     private resetLevelVisuals() {
         // Clear slots
-        this.currentWordSlots.forEach(slot => {
-            (slot.list[0] as Phaser.GameObjects.Image).setTexture('slot_bg');
-            (slot.list[1] as Phaser.GameObjects.Text).setText('');
+        this.currentWordSlots.forEach(row => {
+            row.forEach(slot => {
+                (slot.list[0] as Phaser.GameObjects.Image).setTexture('slot_bg');
+                (slot.list[1] as Phaser.GameObjects.Text).setText('');
+            });
         });
         this.shuffleLetters();
     }
