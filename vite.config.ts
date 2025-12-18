@@ -4,4 +4,13 @@ export default defineConfig({
   plugins: [],
   server: { host: '0.0.0.0', port: 8000 },
   clearScreen: false,
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          phaser: ['phaser']
+        }
+      }
+    }
+  }
 });
