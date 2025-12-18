@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AdminManager } from '../AdminManager';
 
 describe('AdminManager', () => {
@@ -11,6 +11,7 @@ describe('AdminManager', () => {
 
     afterEach(() => {
         document.body.innerHTML = '';
+        vi.restoreAllMocks();
     });
 
     it('should create an admin container attached to body', () => {
@@ -64,5 +65,49 @@ describe('AdminManager', () => {
 
         adminManager.toggle();
         expect(btn?.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    describe('Keyboard Accessibility', () => {
+        it('should close panel on Escape key press', () => {
+            adminManager.toggle(); // Open it
+            const container = document.getElementById('admin-panel');
+            expect(container?.style.display).toBe('block');
+
+            const event = new KeyboardEvent('keydown', { key: 'Escape' });
+            document.dispatchEvent(event);
+
+            expect(container?.style.display).toBe('none');
+            const btn = document.getElementById('admin-toggle-btn');
+            expect(btn?.getAttribute('aria-expanded')).toBe('false');
+        });
+
+        it('should move focus to the first input when opened', () => {
+            const container = document.getElementById('admin-panel');
+            // We need to ensure elements are in the DOM for focus to work
+            // JSDOM supports focus management mostly
+
+            adminManager.toggle();
+
+            const firstInput = container?.querySelector('input');
+            expect(document.activeElement).toBe(firstInput);
+        });
+
+        it('should return focus to toggle button when closed via toggle()', () => {
+            adminManager.toggle(); // Open
+            adminManager.toggle(); // Close
+
+            const btn = document.getElementById('admin-toggle-btn');
+            expect(document.activeElement).toBe(btn);
+        });
+
+        it('should return focus to toggle button when closed via Escape', () => {
+            adminManager.toggle(); // Open
+
+            const event = new KeyboardEvent('keydown', { key: 'Escape' });
+            document.dispatchEvent(event);
+
+            const btn = document.getElementById('admin-toggle-btn');
+            expect(document.activeElement).toBe(btn);
+        });
     });
 });

@@ -63,6 +63,13 @@ export class AdminManager {
                 this.onLevelDataChange(data);
             }
         });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (this.isVisible && e.key === 'Escape') {
+                this.toggle();
+            }
+        });
     }
 
     public setOnLevelDataChange(callback: (data: LevelDataBuilder) => void) {
@@ -73,6 +80,17 @@ export class AdminManager {
         this.isVisible = !this.isVisible;
         this.container.style.display = this.isVisible ? 'block' : 'none';
         this.toggleBtn.setAttribute('aria-expanded', this.isVisible.toString());
+
+        if (this.isVisible) {
+            // Move focus to first interactive element
+            const firstInput = this.container.querySelector('input, button');
+            if (firstInput instanceof HTMLElement) {
+                firstInput.focus();
+            }
+        } else {
+            // Return focus to toggle button
+            this.toggleBtn.focus();
+        }
     }
 
     public getContainer(): HTMLElement {
