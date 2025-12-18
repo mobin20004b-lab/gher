@@ -75,14 +75,14 @@ export default class GameScene extends Phaser.Scene {
         // --- HUD ---
         this.scoreBg = this.add.image(0, 0, 'panel_hud');
         this.scoreText = this.add.text(0, 0, this.levelManager.getScore().toString(), {
-            fontFamily: 'Arial', fontSize: '24px', color: '#ffd700', rtl: true
+            fontFamily: 'Vazirmatn', fontSize: '24px', color: '#ffd700', rtl: true
         }).setOrigin(0.5);
-        this.scoreLabel = this.add.text(0, 0, 'سکه', { fontFamily: 'Arial', fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
+        this.scoreLabel = this.add.text(0, 0, 'سکه', { fontFamily: 'Vazirmatn', fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
 
         // Qandon (Sugar bowl)
         this.qandon = this.add.image(0, 0, 'qandon').setScale(0.8);
         this.qandonCountText = this.add.text(0, 0, this.levelManager.getQandonCount().toString(), {
-            fontFamily: 'Arial', fontSize: '16px', color: '#000000'
+            fontFamily: 'Vazirmatn', fontSize: '16px', color: '#000000'
         }).setOrigin(0.5);
 
         // --- Character ---
@@ -100,7 +100,7 @@ export default class GameScene extends Phaser.Scene {
 
         // Word Preview (floating above saucer)
         this.wordPreviewText = this.add.text(0, 0, '', {
-            fontFamily: 'Arial', fontSize: '32px', color: '#ffffff',
+            fontFamily: 'Vazirmatn', fontSize: '32px', color: '#ffffff',
             backgroundColor: '#00000088', padding: { x: 10, y: 5 }
         }).setOrigin(0.5).setVisible(false);
 
@@ -203,7 +203,7 @@ export default class GameScene extends Phaser.Scene {
 
             const bg = this.add.image(0, 0, 'slot_bg');
             const text = this.add.text(0, 0, '', {
-                fontFamily: 'Arial', fontSize: '30px', color: '#5d4037', fontStyle: 'bold'
+                fontFamily: 'Vazirmatn', fontSize: '30px', color: '#5d4037', fontStyle: 'bold'
             }).setOrigin(0.5);
 
             container.add([bg, text]);
@@ -238,7 +238,7 @@ export default class GameScene extends Phaser.Scene {
             const bg = this.add.image(0, 0, 'letter_bg');
 
             const text = this.add.text(0, 0, char, {
-                fontFamily: 'Arial', fontSize: '32px', color: '#5d4037', fontStyle: 'bold'
+                fontFamily: 'Vazirmatn', fontSize: '32px', color: '#5d4037', fontStyle: 'bold'
             }).setOrigin(0.5);
 
             container.add([bg, text]);
@@ -441,7 +441,7 @@ export default class GameScene extends Phaser.Scene {
             this.qandonCountText.setText(this.levelManager.getQandonCount().toString());
 
             const flyText = this.add.text(this.saucer.x, this.saucer.y, this.currentWord, {
-                 fontFamily: 'Arial', fontSize: '24px', color: '#ffeb3b', rtl: true
+                 fontFamily: 'Vazirmatn', fontSize: '24px', color: '#ffeb3b', rtl: true
             }).setOrigin(0.5);
 
             this.tweens.add({
@@ -458,7 +458,7 @@ export default class GameScene extends Phaser.Scene {
 
     private createFloatingText(x: number, y: number, message: string, color: number) {
         const text = this.add.text(x, y, message, {
-            fontFamily: 'Arial', fontSize: '40px', color: '#' + color.toString(16), stroke: '#000000', strokeThickness: 4, rtl: true
+            fontFamily: 'Vazirmatn', fontSize: '40px', color: '#' + color.toString(16), stroke: '#000000', strokeThickness: 4, rtl: true
         }).setOrigin(0.5);
 
         this.tweens.add({
