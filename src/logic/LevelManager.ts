@@ -24,6 +24,10 @@ export class LevelManager {
     private foundWords: Set<string> = new Set();
     private foundExtras: Set<string> = new Set();
 
+    // Optimization: Sets for O(1) lookups
+    private targetWordsSet: Set<string> = new Set();
+    private extraWordsSet: Set<string> = new Set();
+
     constructor() {
         this.loadLevel(0);
     }
@@ -48,6 +52,16 @@ export class LevelManager {
     private resetLevelState() {
         this.foundWords.clear();
         this.foundExtras.clear();
+
+        // Rebuild lookup sets
+        if (this.currentLevelData) {
+            this.targetWordsSet = new Set(this.currentLevelData.words);
+            this.extraWordsSet = new Set(this.currentLevelData.extras);
+        } else {
+            this.targetWordsSet.clear();
+            this.extraWordsSet.clear();
+        }
+
         // We typically don't reset global score between levels in this genre,
         // but for now let's keep score cumulative and just reset word tracking.
     }
@@ -59,13 +73,15 @@ export class LevelManager {
             return WordCheckResult.ALREADY_FOUND;
         }
 
-        if (this.currentLevelData.words.includes(word)) {
+        // Optimized lookup using Set.has() - O(1)
+        if (this.targetWordsSet.has(word)) {
             this.foundWords.add(word);
             this.score += 10; // Logic for scoring
             return WordCheckResult.TARGET;
         }
 
-        if (this.currentLevelData.extras.includes(word)) {
+        // Optimized lookup using Set.has() - O(1)
+        if (this.extraWordsSet.has(word)) {
             this.foundExtras.add(word);
             this.qandonCount++;
             return WordCheckResult.EXTRA;

@@ -25,6 +25,7 @@ export default class GameScene extends Phaser.Scene {
     // Interaction
     private isDragging: boolean = false;
     private selectedLetters: Phaser.GameObjects.Container[] = [];
+    private selectedLettersSet: Set<Phaser.GameObjects.Container> = new Set(); // Optimization: O(1) lookup
     private lineGraphics!: Phaser.GameObjects.Graphics;
     private wordPreviewText!: Phaser.GameObjects.Text;
 
@@ -305,10 +306,12 @@ export default class GameScene extends Phaser.Scene {
         this.updateLine(pointer);
 
         this.letters.forEach(letter => {
-            if (this.selectedLetters.includes(letter)) return;
+            // Optimization: O(1) lookup instead of O(N) Array.includes()
+            if (this.selectedLettersSet.has(letter)) return;
 
             const dx = pointer.x - letter.x;
             const dy = pointer.y - letter.y;
+            // Squared distance check is already optimal
             if (dx*dx + dy*dy < 30*30) {
                 const textObj = letter.list[1] as Phaser.GameObjects.Text;
                 this.selectLetter(letter, textObj.text);
@@ -335,11 +338,13 @@ export default class GameScene extends Phaser.Scene {
             });
         });
         this.selectedLetters = [];
+        this.selectedLettersSet.clear(); // Clear the set
         this.currentWord = '';
     }
 
     private selectLetter(container: Phaser.GameObjects.Container, char: string) {
         this.selectedLetters.push(container);
+        this.selectedLettersSet.add(container); // Add to set
         this.currentWord += char;
 
         const bg = container.first as Phaser.GameObjects.Image;
