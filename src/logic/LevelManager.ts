@@ -82,8 +82,21 @@ export class LevelManager {
         return this.qandonCount;
     }
 
+    public getCurrentLevelIndex(): number {
+        return this.currentLevelIndex;
+    }
+
     public getCurrentLevelData(): LevelData | null {
         return this.currentLevelData;
+    }
+
+    public nextLevel(): boolean {
+        const nextIndex = this.currentLevelIndex + 1;
+        if (nextIndex < levelsData.levels.length) {
+            this.loadLevel(nextIndex);
+            return true;
+        }
+        return false;
     }
 
     public isLevelComplete(): boolean {
