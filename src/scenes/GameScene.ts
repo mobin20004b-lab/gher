@@ -430,9 +430,20 @@ export default class GameScene extends Phaser.Scene {
             this.createFloatingText(this.scale.width/2, this.scale.height/2, 'عالی!', 0x00ff00);
 
             if (this.levelManager.isLevelComplete()) {
-                this.time.delayedCall(2000, () => {
-                    // Force reload/reset of the level logic
-                    this.scene.restart({ reset: true });
+                this.time.delayedCall(1000, () => {
+                    this.createFloatingText(this.scale.width / 2, this.scale.height / 2, 'مرحله تمام شد!', 0x00ff00);
+                });
+
+                this.time.delayedCall(3000, () => {
+                    if (this.levelManager.nextLevel()) {
+                        this.scene.restart({ reset: true });
+                    } else {
+                        this.createFloatingText(this.scale.width / 2, this.scale.height / 2, 'پایان بازی!', 0xffd700);
+                        this.time.delayedCall(3000, () => {
+                            this.levelManager.loadLevel(0);
+                            this.scene.restart({ reset: true });
+                        });
+                    }
                 });
             }
 

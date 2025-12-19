@@ -5,21 +5,24 @@ def verify_game_load():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         try:
-            # Navigate to the game (Port 8000 based on logs)
+            print("Navigating to http://localhost:8000")
             page.goto("http://localhost:8000")
 
-            # Wait for canvas to be present (GameScene loaded)
+            # Wait for game canvas
+            print("Waiting for canvas...")
             page.wait_for_selector("canvas", timeout=10000)
 
-            # Wait a bit for the scene to render (Phaser init)
-            page.wait_for_timeout(3000)
+            # Wait a bit for assets to load and render
+            print("Waiting for rendering...")
+            page.wait_for_timeout(5000)
 
-            # Take screenshot
-            page.screenshot(path="verification/verification.png")
-            print("Screenshot taken.")
+            # Take screenshot of initial state
+            page.screenshot(path="verification_game_initial.png")
+            print("Screenshot taken: verification_game_initial.png")
 
         except Exception as e:
             print(f"Error: {e}")
+            page.screenshot(path="verification_error.png")
         finally:
             browser.close()
 
