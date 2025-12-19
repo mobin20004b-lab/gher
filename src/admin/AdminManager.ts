@@ -24,6 +24,7 @@ export class AdminManager {
         this.container.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
         this.container.setAttribute('role', 'dialog');
         this.container.setAttribute('aria-label', 'Admin Panel');
+        this.container.tabIndex = -1;
 
         document.body.appendChild(this.container);
 
@@ -63,6 +64,13 @@ export class AdminManager {
                 this.onLevelDataChange(data);
             }
         });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isVisible) {
+                this.toggle();
+            }
+        });
     }
 
     public setOnLevelDataChange(callback: (data: LevelDataBuilder) => void) {
@@ -73,6 +81,12 @@ export class AdminManager {
         this.isVisible = !this.isVisible;
         this.container.style.display = this.isVisible ? 'block' : 'none';
         this.toggleBtn.setAttribute('aria-expanded', this.isVisible.toString());
+
+        if (this.isVisible) {
+            this.container.focus();
+        } else {
+            this.toggleBtn.focus();
+        }
     }
 
     public getContainer(): HTMLElement {
