@@ -144,6 +144,22 @@ export default class Preloader extends Phaser.Scene {
         graphics.fillRoundedRect(0, 0, 120, 40, 20);
         graphics.generateTexture('panel_hud', 120, 40);
 
+        // --- Particle (Star) ---
+        graphics.clear();
+        graphics.fillStyle(0xffeb3b, 1);
+        graphics.beginPath();
+        // Draw a simple 5-pointed star
+        const cx = 16, cy = 16, outerRadius = 15, innerRadius = 7;
+        for (let i = 0; i < 5; i++) {
+            const angle = (i * 4 * Math.PI) / 10 - Math.PI / 2;
+            graphics.lineTo(cx + Math.cos(angle) * outerRadius, cy + Math.sin(angle) * outerRadius);
+            const angleInner = ((i * 4 + 2) * Math.PI) / 10 - Math.PI / 2;
+            graphics.lineTo(cx + Math.cos(angleInner) * innerRadius, cy + Math.sin(angleInner) * innerRadius);
+        }
+        graphics.closePath();
+        graphics.fillPath();
+        graphics.generateTexture('particle', 32, 32);
+
         graphics.destroy();
     }
 
