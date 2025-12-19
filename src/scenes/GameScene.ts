@@ -31,6 +31,9 @@ export default class GameScene extends Phaser.Scene {
     // Logic
     private levelManager!: LevelManager;
 
+    // Particles
+    private particleEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+
     constructor() {
         super('game');
     }
@@ -110,6 +113,16 @@ export default class GameScene extends Phaser.Scene {
 
         // --- Layout ---
         this.updateLayout();
+
+        // --- Particles ---
+        this.particleEmitter = this.add.particles(0, 0, 'particle', {
+            lifespan: 800,
+            speed: { min: 150, max: 350 },
+            scale: { start: 0.6, end: 0 },
+            gravityY: 150,
+            emitting: false,
+            blendMode: Phaser.BlendModes.ADD
+        });
 
         // Listen for resize
         this.scale.on('resize', this.resize, this);
@@ -404,6 +417,17 @@ export default class GameScene extends Phaser.Scene {
         if (isTarget) {
             this.scoreText.setText(`${this.levelManager.getScore()}`);
 
+            // Burst particles at the target word location
+            // We can approximate the center of the target word slots
+            if (this.currentWordSlots.length > 0) {
+                const firstSlot = this.currentWordSlots[0];
+                const lastSlot = this.currentWordSlots[this.currentWordSlots.length - 1];
+                const centerX = (firstSlot.x + lastSlot.x) / 2;
+                const centerY = firstSlot.y;
+
+                this.particleEmitter.explode(20, centerX, centerY);
+            }
+
             const words = this.levelManager.getCurrentLevelData()?.words || [];
             if (words[0] === this.currentWord) {
                 for(let i = 0; i < this.currentWord.length; i++) {
@@ -439,6 +463,9 @@ export default class GameScene extends Phaser.Scene {
         } else {
             // Qandon
             this.qandonCountText.setText(this.levelManager.getQandonCount().toString());
+
+            // Burst particles at the Qandon
+            this.particleEmitter.explode(10, this.qandon.x, this.qandon.y);
 
             const flyText = this.add.text(this.saucer.x, this.saucer.y, this.currentWord, {
                  fontFamily: 'Vazirmatn', fontSize: '24px', color: '#ffeb3b', rtl: true
