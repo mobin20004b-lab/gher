@@ -49,7 +49,23 @@ export class GameBuilder {
         input.id = id;
         input.type = 'text';
         input.style.width = '100%';
+        input.style.padding = '8px';
+        input.style.marginBottom = '5px';
+        input.style.border = '1px solid #ccc';
+        input.style.borderRadius = '4px';
         input.style.boxSizing = 'border-box';
+        input.style.backgroundColor = '#333';
+        input.style.color = 'white';
+
+        // Accessibility: Visual focus indicator
+        input.addEventListener('focus', () => {
+            input.style.outline = '2px solid #4CAF50';
+            input.style.borderColor = '#4CAF50';
+        });
+        input.addEventListener('blur', () => {
+            input.style.outline = 'none';
+            input.style.borderColor = '#ccc';
+        });
 
         if (id === 'builder-letters') this.lettersInput = input;
         if (id === 'builder-words') this.wordsInput = input;
