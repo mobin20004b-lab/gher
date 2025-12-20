@@ -34,6 +34,7 @@ export default class GameScene extends Phaser.Scene {
 
     // Particles
     private particleEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+    private dragEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
 
     constructor() {
         super('game');
@@ -121,6 +122,15 @@ export default class GameScene extends Phaser.Scene {
             speed: { min: 150, max: 350 },
             scale: { start: 0.6, end: 0 },
             gravityY: 150,
+            emitting: false,
+            blendMode: Phaser.BlendModes.ADD
+        });
+
+        this.dragEmitter = this.add.particles(0, 0, 'particle', {
+            lifespan: 200,
+            scale: { start: 0.3, end: 0 },
+            alpha: { start: 0.6, end: 0 },
+            speed: 0,
             emitting: false,
             blendMode: Phaser.BlendModes.ADD
         });
@@ -316,6 +326,7 @@ export default class GameScene extends Phaser.Scene {
     private handlePointerMove(pointer: Phaser.Input.Pointer) {
         if (!this.isDragging) return;
 
+        this.dragEmitter.emitParticleAt(pointer.x, pointer.y);
         this.updateLine(pointer);
 
         this.letters.forEach(letter => {
@@ -344,6 +355,7 @@ export default class GameScene extends Phaser.Scene {
         this.selectedLetters.forEach(letter => {
             const bg = letter.first as Phaser.GameObjects.Image;
             bg.setTexture('letter_bg');
+            this.tweens.killTweensOf(letter);
             this.tweens.add({
                 targets: letter,
                 scale: 1,
@@ -356,6 +368,17 @@ export default class GameScene extends Phaser.Scene {
     }
 
     private selectLetter(container: Phaser.GameObjects.Container, char: string) {
+        // Reset scale/state of previous last letter
+        if (this.selectedLetters.length > 0) {
+            const prev = this.selectedLetters[this.selectedLetters.length - 1];
+            this.tweens.killTweensOf(prev);
+            this.tweens.add({
+                targets: prev,
+                scale: 1.0,
+                duration: 100
+            });
+        }
+
         this.selectedLetters.push(container);
         this.selectedLettersSet.add(container); // Add to set
         this.currentWord += char;
@@ -363,12 +386,26 @@ export default class GameScene extends Phaser.Scene {
         const bg = container.first as Phaser.GameObjects.Image;
         bg.setTexture('letter_bg_active');
 
+        // Pop and then subtle pulse for the active head
         this.tweens.add({
             targets: container,
             scale: 1.2,
-            duration: 100,
+            duration: 150,
             yoyo: true,
-            repeat: 0
+            repeat: 0,
+            onComplete: () => {
+                // If it is still the head of the selection chain
+                if (this.selectedLetters.length > 0 &&
+                    this.selectedLetters[this.selectedLetters.length - 1] === container) {
+                    this.tweens.add({
+                        targets: container,
+                        scale: { from: 1.0, to: 1.1 },
+                        duration: 300,
+                        yoyo: true,
+                        repeat: -1
+                    });
+                }
+            }
         });
 
         this.wordPreviewText.setText(this.currentWord);
@@ -379,19 +416,16 @@ export default class GameScene extends Phaser.Scene {
         this.lineGraphics.clear();
         if (this.selectedLetters.length === 0) return;
 
-        this.lineGraphics.lineStyle(10, 0xff6f00, 0.5);
-        this.lineGraphics.beginPath();
+        const points = this.selectedLetters.map(l => ({ x: l.x, y: l.y }));
+        points.push({ x: pointer.x, y: pointer.y });
 
-        const first = this.selectedLetters[0];
-        this.lineGraphics.moveTo(first.x, first.y);
+        // Glow
+        this.lineGraphics.lineStyle(20, 0xffa000, 0.3);
+        this.lineGraphics.strokePoints(points, false);
 
-        for (let i = 1; i < this.selectedLetters.length; i++) {
-            const letter = this.selectedLetters[i];
-            this.lineGraphics.lineTo(letter.x, letter.y);
-        }
-
-        this.lineGraphics.lineTo(pointer.x, pointer.y);
-        this.lineGraphics.strokePath();
+        // Core
+        this.lineGraphics.lineStyle(8, 0xffffff, 0.8);
+        this.lineGraphics.strokePoints(points, false);
     }
 
     private checkWord() {
