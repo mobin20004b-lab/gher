@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import Preloader from './scenes/Preloader';
+import MainMenu from './scenes/MainMenu';
 import GameScene from './scenes/GameScene';
 import { AdminManager } from './admin/AdminManager';
 
@@ -20,7 +21,7 @@ const config: Phaser.Types.Core.GameConfig = {
             debug: false
         }
     },
-    scene: [Preloader, GameScene]
+    scene: [Preloader, MainMenu, GameScene]
 };
 
 const game = new Phaser.Game(config);
