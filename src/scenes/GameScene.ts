@@ -211,7 +211,10 @@ export default class GameScene extends Phaser.Scene {
         } else {
              const startX = centerX - ((length - 1) * 28);
              this.currentWordSlots.forEach((container, i) => {
-                 container.setPosition(startX + i * 60, centerY);
+                 // RTL: Index 0 (first letter) should be at the rightmost position
+                 // We calculate position from Right to Left relative to startX
+                 const x = startX + ((length - 1 - i) * 60);
+                 container.setPosition(x, centerY);
              });
         }
     }
@@ -223,7 +226,9 @@ export default class GameScene extends Phaser.Scene {
         this.currentWordSlots = [];
 
         for(let i = 0; i < length; i++) {
-            const container = this.add.container(startX + i * 60, centerY);
+            // RTL: Index 0 (first letter) at the right
+            const x = startX + ((length - 1 - i) * 60);
+            const container = this.add.container(x, centerY);
 
             const bg = this.add.image(0, 0, 'slot_bg');
             const text = this.add.text(0, 0, '', {
