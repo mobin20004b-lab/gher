@@ -245,7 +245,7 @@ export default class GameScene extends Phaser.Scene {
                 row.push(container);
             }
             this.wordSlotGroups.push(row);
-        });
+        }
     }
 
     private repositionLetters(centerX: number, centerY: number) {
