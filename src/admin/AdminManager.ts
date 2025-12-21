@@ -26,6 +26,39 @@ export class AdminManager {
         this.container.setAttribute('aria-label', 'Admin Panel');
         this.container.tabIndex = -1;
 
+        // Add Header
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.marginBottom = '15px';
+
+        const title = document.createElement('h2');
+        title.textContent = 'Admin Panel';
+        title.style.margin = '0';
+        title.style.fontSize = '18px';
+        title.style.color = '#fff';
+        header.appendChild(title);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.id = 'admin-close-btn';
+        closeBtn.innerHTML = '&#x2715;';
+        closeBtn.style.background = 'transparent';
+        closeBtn.style.border = 'none';
+        closeBtn.style.color = '#ccc';
+        closeBtn.style.fontSize = '20px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.padding = '0';
+        closeBtn.style.lineHeight = '1';
+        closeBtn.setAttribute('aria-label', 'Close Admin Panel');
+
+        closeBtn.addEventListener('mouseenter', () => closeBtn.style.color = '#fff');
+        closeBtn.addEventListener('mouseleave', () => closeBtn.style.color = '#ccc');
+        closeBtn.onclick = () => this.toggle();
+
+        header.appendChild(closeBtn);
+        this.container.appendChild(header);
+
         document.body.appendChild(this.container);
 
         this.toggleBtn = document.createElement('button');
