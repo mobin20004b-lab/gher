@@ -65,4 +65,21 @@ describe('AdminManager', () => {
         adminManager.toggle();
         expect(btn?.getAttribute('aria-expanded')).toBe('false');
     });
+
+    it('should have a close button inside the panel', () => {
+        const closeBtn = document.getElementById('admin-close-btn');
+        expect(closeBtn).not.toBeNull();
+        expect(closeBtn?.getAttribute('aria-label')).toBe('Close Admin Panel');
+    });
+
+    it('should close the panel when close button is clicked', () => {
+        adminManager.toggle(); // Open it first
+        const container = document.getElementById('admin-panel');
+        const closeBtn = document.getElementById('admin-close-btn');
+
+        expect(container?.style.display).toBe('block');
+
+        closeBtn?.click();
+        expect(container?.style.display).toBe('none');
+    });
 });
