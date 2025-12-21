@@ -6,7 +6,7 @@ export default class GameScene extends Phaser.Scene {
     private shuffleBtn!: Phaser.GameObjects.Image;
     private letters: Phaser.GameObjects.Container[] = [];
     private currentWord: string = '';
-    private currentWordSlots: Phaser.GameObjects.Container[] = [];
+    private wordSlotGroups: Phaser.GameObjects.Container[][] = [];
     private scoreText!: Phaser.GameObjects.Text;
     private scoreBg!: Phaser.GameObjects.Image;
     private scoreLabel!: Phaser.GameObjects.Text;
@@ -204,35 +204,56 @@ export default class GameScene extends Phaser.Scene {
         const levelData = this.levelManager.getCurrentLevelData();
         if (!levelData) return;
 
-        const length = levelData.words[0].length;
+        const words = levelData.words;
 
-        if (this.currentWordSlots.length === 0) {
-            this.createTargetSlots(length, centerX, centerY);
+        // Re-create slots if the number of words doesn't match
+        if (this.wordSlotGroups.length !== words.length) {
+            this.createTargetSlots(words, centerX, centerY);
         } else {
-             const startX = centerX - ((length - 1) * 28);
-             this.currentWordSlots.forEach((container, i) => {
-                 container.setPosition(startX + i * 60, centerY);
-             });
+            // Reposition existing
+            const rowHeight = 80;
+            const totalHeight = (words.length - 1) * rowHeight;
+            const startY = centerY - (totalHeight / 2);
+
+            this.wordSlotGroups.forEach((group, rowIndex) => {
+                const wordLength = group.length;
+                const startX = centerX - ((wordLength - 1) * 30);
+
+                const rowY = startY + rowIndex * rowHeight;
+                group.forEach((slot, colIndex) => {
+                    slot.setPosition(startX + colIndex * 60, rowY);
+                });
+            });
         }
     }
 
-    private createTargetSlots(length: number, centerX: number, centerY: number) {
-        const startX = centerX - ((length - 1) * 28);
+    private createTargetSlots(words: string[], centerX: number, centerY: number) {
+        this.wordSlotGroups.forEach(group => group.forEach(s => s.destroy()));
+        this.wordSlotGroups = [];
 
-        this.currentWordSlots.forEach(s => s.destroy());
-        this.currentWordSlots = [];
+        const rowHeight = 80;
+        const totalHeight = (words.length - 1) * rowHeight;
+        const startY = centerY - (totalHeight / 2);
 
-        for(let i = 0; i < length; i++) {
-            const container = this.add.container(startX + i * 60, centerY);
+        words.forEach((word, rowIndex) => {
+            const row: Phaser.GameObjects.Container[] = [];
+            const length = word.length;
+            const startX = centerX - ((length - 1) * 30);
+            const rowY = startY + rowIndex * rowHeight;
 
-            const bg = this.add.image(0, 0, 'slot_bg');
-            const text = this.add.text(0, 0, '', {
-                fontFamily: 'Vazirmatn', fontSize: '30px', color: '#5d4037', fontStyle: 'bold'
-            }).setOrigin(0.5);
+            for(let i = 0; i < length; i++) {
+                const container = this.add.container(startX + i * 60, rowY);
 
-            container.add([bg, text]);
-            this.currentWordSlots.push(container);
-        }
+                const bg = this.add.image(0, 0, 'slot_bg');
+                const text = this.add.text(0, 0, '', {
+                    fontFamily: 'Vazirmatn', fontSize: '30px', color: '#5d4037', fontStyle: 'bold'
+                }).setOrigin(0.5);
+
+                container.add([bg, text]);
+                row.push(container);
+            }
+            this.wordSlotGroups.push(row);
+        });
     }
 
     private repositionLetters(centerX: number, centerY: number) {
@@ -457,22 +478,25 @@ export default class GameScene extends Phaser.Scene {
         if (isTarget) {
             this.scoreText.setText(`${this.levelManager.getScore()}`);
 
-            // Burst particles at the target word location
-            // We can approximate the center of the target word slots
-            if (this.currentWordSlots.length > 0) {
-                const firstSlot = this.currentWordSlots[0];
-                const lastSlot = this.currentWordSlots[this.currentWordSlots.length - 1];
-                const centerX = (firstSlot.x + lastSlot.x) / 2;
-                const centerY = firstSlot.y;
-
-                this.particleEmitter.explode(20, centerX, centerY);
-            }
-
             const words = this.levelManager.getCurrentLevelData()?.words || [];
-            if (words[0] === this.currentWord) {
+            const wordIndex = words.indexOf(this.currentWord);
+
+            // Burst particles at the target word location
+            if (wordIndex !== -1 && wordIndex < this.wordSlotGroups.length) {
+                const group = this.wordSlotGroups[wordIndex];
+                if (group.length > 0) {
+                    const firstSlot = group[0];
+                    const lastSlot = group[group.length - 1];
+                    const centerX = (firstSlot.x + lastSlot.x) / 2;
+                    const centerY = firstSlot.y;
+
+                    this.particleEmitter.explode(20, centerX, centerY);
+                }
+
+                // Reveal slots
                 for(let i = 0; i < this.currentWord.length; i++) {
-                    if (i < this.currentWordSlots.length) {
-                        const slot = this.currentWordSlots[i];
+                    if (i < group.length) {
+                        const slot = group[i];
                         const bg = slot.list[0] as Phaser.GameObjects.Image;
                         const text = slot.list[1] as Phaser.GameObjects.Text;
 
@@ -550,9 +574,11 @@ export default class GameScene extends Phaser.Scene {
 
     private resetLevelVisuals() {
         // Clear slots
-        this.currentWordSlots.forEach(slot => {
-            (slot.list[0] as Phaser.GameObjects.Image).setTexture('slot_bg');
-            (slot.list[1] as Phaser.GameObjects.Text).setText('');
+        this.wordSlotGroups.forEach(group => {
+            group.forEach(slot => {
+                (slot.list[0] as Phaser.GameObjects.Image).setTexture('slot_bg');
+                (slot.list[1] as Phaser.GameObjects.Text).setText('');
+            });
         });
         this.shuffleLetters();
     }
