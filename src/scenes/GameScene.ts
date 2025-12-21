@@ -210,20 +210,13 @@ export default class GameScene extends Phaser.Scene {
         if (this.wordSlotGroups.length !== words.length) {
             this.createTargetSlots(words, centerX, centerY);
         } else {
-            // Reposition existing
-            const rowHeight = 80;
-            const totalHeight = (words.length - 1) * rowHeight;
-            const startY = centerY - (totalHeight / 2);
-
-            this.wordSlotGroups.forEach((group, rowIndex) => {
-                const wordLength = group.length;
-                const startX = centerX - ((wordLength - 1) * 30);
-
-                const rowY = startY + rowIndex * rowHeight;
-                group.forEach((slot, colIndex) => {
-                    slot.setPosition(startX + colIndex * 60, rowY);
-                });
-            });
+             const startX = centerX - ((length - 1) * 28);
+             this.currentWordSlots.forEach((container, i) => {
+                 // RTL: Index 0 (first letter) should be at the rightmost position
+                 // We calculate position from Right to Left relative to startX
+                 const x = startX + ((length - 1 - i) * 60);
+                 container.setPosition(x, centerY);
+             });
         }
     }
 
@@ -235,11 +228,10 @@ export default class GameScene extends Phaser.Scene {
         const totalHeight = (words.length - 1) * rowHeight;
         const startY = centerY - (totalHeight / 2);
 
-        words.forEach((word, rowIndex) => {
-            const row: Phaser.GameObjects.Container[] = [];
-            const length = word.length;
-            const startX = centerX - ((length - 1) * 30);
-            const rowY = startY + rowIndex * rowHeight;
+        for(let i = 0; i < length; i++) {
+            // RTL: Index 0 (first letter) at the right
+            const x = startX + ((length - 1 - i) * 60);
+            const container = this.add.container(x, centerY);
 
             for(let i = 0; i < length; i++) {
                 const container = this.add.container(startX + i * 60, rowY);
