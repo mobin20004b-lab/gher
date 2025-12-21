@@ -416,8 +416,9 @@ export default class GameScene extends Phaser.Scene {
         this.lineGraphics.clear();
         if (this.selectedLetters.length === 0) return;
 
-        const points = this.selectedLetters.map(l => ({ x: l.x, y: l.y }));
-        points.push({ x: pointer.x, y: pointer.y });
+        // Optimization: Avoid creating new objects/arrays on every frame
+        // Cast to Vector2Like[] because Container and Pointer both have x, y properties
+        const points = [...this.selectedLetters, pointer] as Phaser.Types.Math.Vector2Like[];
 
         // Glow
         this.lineGraphics.lineStyle(20, 0xffa000, 0.3);
