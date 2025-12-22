@@ -26,6 +26,7 @@ export default class GameScene extends Phaser.Scene {
     private isDragging: boolean = false;
     private selectedLetters: Phaser.GameObjects.Container[] = [];
     private selectedLettersSet: Set<Phaser.GameObjects.Container> = new Set(); // Optimization: O(1) lookup
+    private pointsBuffer: Phaser.Types.Math.Vector2Like[] = []; // Optimization: Reusable buffer for line rendering
     private lineGraphics!: Phaser.GameObjects.Graphics;
     private wordPreviewText!: Phaser.GameObjects.Text;
 
@@ -429,17 +430,21 @@ export default class GameScene extends Phaser.Scene {
         this.lineGraphics.clear();
         if (this.selectedLetters.length === 0) return;
 
-        // Optimization: Avoid creating new objects/arrays on every frame
-        // Cast to Vector2Like[] because Container and Pointer both have x, y properties
-        const points = [...this.selectedLetters, pointer] as Phaser.Types.Math.Vector2Like[];
+        // Optimization: Reuse buffer to avoid creating new array on every frame
+        this.pointsBuffer.length = 0;
+        const len = this.selectedLetters.length;
+        for (let i = 0; i < len; i++) {
+            this.pointsBuffer.push(this.selectedLetters[i]);
+        }
+        this.pointsBuffer.push(pointer);
 
         // Glow
         this.lineGraphics.lineStyle(20, 0xffa000, 0.3);
-        this.lineGraphics.strokePoints(points, false);
+        this.lineGraphics.strokePoints(this.pointsBuffer, false);
 
         // Core
         this.lineGraphics.lineStyle(8, 0xffffff, 0.8);
-        this.lineGraphics.strokePoints(points, false);
+        this.lineGraphics.strokePoints(this.pointsBuffer, false);
     }
 
     private checkWord() {
