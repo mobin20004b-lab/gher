@@ -34,7 +34,32 @@ export class GameBuilder {
         const btn = document.createElement('button');
         btn.id = 'builder-apply-btn';
         btn.textContent = 'Apply Changes';
-        btn.onclick = () => this.handleApply();
+
+        // Button styling
+        btn.style.marginTop = '10px';
+        btn.style.padding = '10px 15px';
+        btn.style.backgroundColor = '#4CAF50';
+        btn.style.color = 'white';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '5px';
+        btn.style.cursor = 'pointer';
+        btn.style.width = '100%';
+        btn.style.fontWeight = 'bold';
+        btn.style.fontSize = '14px';
+        btn.setAttribute('aria-label', 'Apply changes to level');
+
+        // Hover effects
+        btn.addEventListener('mouseenter', () => btn.style.backgroundColor = '#45a049');
+        btn.addEventListener('mouseleave', () => btn.style.backgroundColor = '#4CAF50');
+
+        // Focus styles for accessibility
+        btn.addEventListener('focus', () => {
+            btn.style.outline = '2px solid white';
+            btn.style.outlineOffset = '2px';
+        });
+        btn.addEventListener('blur', () => btn.style.outline = 'none');
+
+        btn.onclick = () => this.handleApply(btn);
         this.container.appendChild(btn);
     }
 
@@ -90,7 +115,7 @@ export class GameBuilder {
         this.applyCallback = callback;
     }
 
-    private handleApply() {
+    private handleApply(btn?: HTMLButtonElement) {
         const letters = this.lettersInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
         const words = this.wordsInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
         const extras = this.extrasInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
@@ -103,6 +128,22 @@ export class GameBuilder {
 
         if (this.applyCallback) {
             this.applyCallback(data);
+        }
+
+        // Feedback animation
+        if (btn) {
+            const originalText = btn.textContent;
+            // Don't capture background color as it might be the hover state
+
+            btn.textContent = 'Applied! ✓';
+            btn.style.backgroundColor = '#2E7D32'; // Darker green
+            btn.setAttribute('aria-label', 'Changes applied successfully');
+
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.backgroundColor = '#4CAF50'; // Restore default color
+                btn.setAttribute('aria-label', 'Apply changes to level');
+            }, 1000);
         }
     }
 }
