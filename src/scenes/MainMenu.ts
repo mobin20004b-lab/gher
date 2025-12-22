@@ -30,6 +30,7 @@ export default class MainMenu extends Phaser.Scene {
 
         // Start Button using Reusable Component
         const buttonY = height * 0.6;
+        // Using new signature with config object (empty for default red button)
         this.startBtn = new Button(this, width / 2, buttonY, 'شروع بازی', () => {
             this.scene.start('game');
         });

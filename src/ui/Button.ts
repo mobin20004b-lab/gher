@@ -1,26 +1,48 @@
 import Phaser from 'phaser';
 
+export interface ButtonConfig {
+    width?: number;
+    height?: number;
+    backgroundColor?: number;
+    hoverColor?: number;
+    textColor?: string;
+    fontSize?: string;
+    fontFamily?: string;
+    texture?: string; // If provided, use an image instead of rectangle
+}
+
 export default class Button extends Phaser.GameObjects.Container {
     private background: Phaser.GameObjects.Rectangle | Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
     private label: Phaser.GameObjects.Text;
     private onClick: () => void;
     private isFocused: boolean = false;
+    private config: ButtonConfig;
 
-    constructor(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, width: number = 200, height: number = 60) {
+    constructor(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, config: ButtonConfig = {}) {
         super(scene, x, y);
         this.onClick = onClick;
+        this.config = config;
+
+        const width = config.width ?? 200;
+        const height = config.height ?? 60;
+        const bgColor = config.backgroundColor ?? 0xef5350;
 
         // Background
-        // Default to a simple rectangle if no texture is provided (can be enhanced later)
-        this.background = scene.add.rectangle(0, 0, width, height, 0xef5350);
+        if (config.texture) {
+            this.background = scene.add.image(0, 0, config.texture);
+            this.background.setDisplaySize(width, height);
+        } else {
+            this.background = scene.add.rectangle(0, 0, width, height, bgColor);
+        }
+
         this.background.setInteractive({ useHandCursor: true });
         this.add(this.background);
 
         // Text
         this.label = scene.add.text(0, 0, text, {
-            fontFamily: 'Vazirmatn',
-            fontSize: '24px',
-            color: '#ffffff'
+            fontFamily: config.fontFamily ?? 'Vazirmatn',
+            fontSize: config.fontSize ?? '24px',
+            color: config.textColor ?? '#ffffff'
         }).setOrigin(0.5);
         this.add(this.label);
 
@@ -51,7 +73,8 @@ export default class Button extends Phaser.GameObjects.Container {
 
     private handlePointerOver() {
         if (this.background instanceof Phaser.GameObjects.Rectangle) {
-            this.background.setFillStyle(0xff7043);
+            const hoverColor = this.config.hoverColor ?? 0xff7043; // Default hover for red
+            this.background.setFillStyle(hoverColor);
         } else {
             this.background.setTint(0xdddddd);
         }
@@ -59,9 +82,15 @@ export default class Button extends Phaser.GameObjects.Container {
 
     private handlePointerOut() {
         if (this.background instanceof Phaser.GameObjects.Rectangle) {
-            this.background.setFillStyle(0xef5350);
+             const bgColor = this.config.backgroundColor ?? 0xef5350;
+            this.background.setFillStyle(bgColor);
         } else {
-            this.background.clearTint();
+            // Restore focus tint if focused, otherwise clear tint
+            if (this.isFocused) {
+                this.background.setTint(0xcccccc);
+            } else {
+                this.background.clearTint();
+            }
         }
         this.setScale(1);
     }
@@ -71,6 +100,12 @@ export default class Button extends Phaser.GameObjects.Container {
         this.isFocused = focused;
         if (this.background instanceof Phaser.GameObjects.Rectangle) {
              this.background.setStrokeStyle(focused ? 4 : 0, 0xffffff);
+        } else {
+            if (focused) {
+                this.background.setTint(0xcccccc);
+            } else {
+                this.background.clearTint();
+            }
         }
     }
 
